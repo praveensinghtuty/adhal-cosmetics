@@ -1,4 +1,4 @@
-const WHATSAPP_NUMBER = "919876543210"; // change this
+import { WHATSAPP_NUMBER } from "@/lib/config";
 
 export default function OrderModal({
   cart,
