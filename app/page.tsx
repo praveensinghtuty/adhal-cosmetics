@@ -10,12 +10,19 @@ interface Product {
   image_url: string;
 }
 
+interface Review {
+  id: string;
+  name: string;
+  rating: number;
+  comment: string;
+}
+
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [reviews, setReviews] = useState([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [currentReview, setCurrentReview] = useState(0);
   const [showPopup, setShowPopup] = useState(false);
 
