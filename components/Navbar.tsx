@@ -26,7 +26,7 @@ export default function Navbar() {
         </button>
 
         {/* Center */}
-        <div className="nav-brand">
+        <div className="nav-brand" onClick={() => router.push("/")}>
           <span className="brand-main">ADHAL</span>
           <span className="brand-sub">Cosmetics</span>
         </div>

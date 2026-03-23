@@ -542,3 +542,112 @@ button {
 .secondary:active {
   transform: scale(0.96);
 }
+
+/* Applied filter chip */
+.applied-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  background: #f3f2ee;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.applied-chip button {
+  border: none;
+  background: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Fullscreen overlay */
+.filter-fullscreen {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+/* Panel */
+.filter-panel {
+  width: 100%;
+  max-height: 85vh;
+  background: #faf9f6;
+  border-radius: 20px 20px 0 0;
+  overflow-y: auto;
+}
+
+/* STICKY HEADER */
+.filter-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  background: #faf9f6;
+  padding: 16px 0;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  border-bottom: 1px solid #eee;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+/* List */
+.filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Item */
+.filter-item {
+  text-align: left;
+  padding: 12px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #eee;
+}
+
+/* Active */
+.filter-item.active {
+  border-color: #6b7d3a;
+  color: #6b7d3a;
+  font-weight: 500;
+}
+
+/* Overlay fade */
+.animate-overlay {
+  animation: fadeInOverlay 0.25s ease;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Sheet slide-up */
+.animate-sheet {
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

@@ -23,6 +23,7 @@ export default function ProductsClient() {
   >({});
   const [showModal, setShowModal] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const clearCart = () => {
     setCart({});
@@ -108,8 +109,9 @@ export default function ProductsClient() {
       <h1 className="text-3xl mb-8 text-gray-900 font-serif">Our Products</h1>
 
       {/* Filters */}
-      <div className="mb-10">
-        <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="mb-4">
+        <div className="flex items-center gap-2">
+          {/* All */}
           <button
             onClick={() => setSelectedTag(null)}
             className={`${baseChip} ${
@@ -119,19 +121,59 @@ export default function ProductsClient() {
             All
           </button>
 
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setSelectedTag(tag)}
-              className={`${baseChip} ${
-                selectedTag === tag ? activeChip : inactiveChip
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
+          {/* More Filters */}
+          <button
+            onClick={() => setShowFilters(true)}
+            className={`${baseChip} ${inactiveChip}`}
+          >
+            More Filters
+          </button>
         </div>
+
+        {/* Applied Filter */}
+        {selectedTag && (
+          <div className="mt-3">
+            <span className="applied-chip">
+              {selectedTag}
+              <button onClick={() => setSelectedTag(null)}>✕</button>
+            </span>
+          </div>
+        )}
       </div>
+
+      {showFilters && (
+        <div
+          className="filter-fullscreen animate-overlay"
+          onClick={() => setShowFilters(false)}
+        >
+          <div
+            className="filter-panel animate-sheet"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="filter-header">
+              <h2>Filters</h2>
+              <button onClick={() => setShowFilters(false)}>✕</button>
+            </div>
+
+            <div className="filter-list">
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  className={`filter-item ${
+                    selectedTag === tag ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedTag(tag);
+                    setShowFilters(false); // 👈 close immediately
+                  }}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Product Grid */}
       <div
