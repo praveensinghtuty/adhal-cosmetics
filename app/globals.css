@@ -651,3 +651,245 @@ button {
     opacity: 1;
   }
 }
+
+.reviews-page {
+  padding: 24px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.reviews-page h1 {
+  font-family: "Playfair Display", serif;
+  margin-bottom: 20px;
+}
+
+/* FORM */
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.review-form input,
+.review-form textarea,
+.review-form select {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.review-form button {
+  background: #6b7d3a;
+  color: white;
+  padding: 12px;
+  border-radius: 24px;
+}
+
+/* LIST */
+.review-card {
+  background: rgba(255, 255, 255, 0.7);
+  padding: 14px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+}
+
+.review-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.star-row {
+  display: flex;
+  gap: 6px;
+}
+
+.star {
+  font-size: 22px;
+  color: #ddd;
+  cursor: pointer;
+  transition: transform 0.15s ease, color 0.2s ease;
+}
+
+.star.active {
+  color: #6b7d3a;
+}
+
+/* tap feedback */
+.star:active {
+  transform: scale(1.2);
+}
+.review-popup {
+  position: fixed;
+  top: 70px; /* 👈 below navbar */
+  left: 16px;
+  right: 16px;
+
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+
+  border-radius: 16px;
+  padding: 12px 14px;
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  animation: slideDown 0.4s ease;
+  z-index: 50;
+}
+
+/* header */
+.review-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+/* avatar */
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+
+  background: #6b7d3a;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* meta */
+.review-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.review-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #2b2b2b;
+}
+
+.review-stars {
+  font-size: 12px;
+  color: #6b7d3a;
+}
+
+/* text */
+.review-text {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.5;
+}
+
+/* animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Overlay */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+
+  animation: fadeIn 0.25s ease;
+}
+
+/* Drawer */
+.drawer {
+  width: 80%;
+  max-width: 300px;
+  height: 100%;
+
+  background: #faf9f6;
+  padding: 20px 18px;
+
+  border-radius: 0 24px 24px 0;
+
+  display: flex;
+  flex-direction: column;
+
+  animation: slideInLeft 0.28s ease;
+}
+
+/* HEADER */
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* CLOSE BUTTON */
+.drawer-close {
+  border: none;
+  background: none;
+  font-size: 18px;
+  color: #777;
+}
+
+/* DIVIDER */
+.drawer-divider {
+  height: 1px;
+  background: #e8e6e1;
+  margin: 18px 0 10px;
+}
+
+/* MENU */
+.drawer-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ITEM */
+.drawer-item {
+  background: none;
+  border: none;
+
+  text-align: left;
+  font-size: 16px;
+  color: #2b2b2b;
+
+  padding: 8px 6px;
+  border-radius: 10px;
+
+  transition: all 0.2s ease;
+}
+
+/* ACTIVE */
+.drawer-item.active {
+  color: #6b7d3a;
+  font-weight: 600;
+}
+
+/* TOUCH */
+.drawer-item:active {
+  background: rgba(107, 125, 58, 0.08);
+}
+
+/* ANIMATIONS */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

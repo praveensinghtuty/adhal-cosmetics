@@ -1,41 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Menu, ShoppingBag } from "lucide-react";
+import { useRouter } from "next/navigation";
+import SideDrawer from "./SideDrawer";
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
-    <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
-      <div className="nav-inner">
-        {/* Left */}
-        <button className="nav-btn">
-          <Menu size={20} color="#2b2b2b" strokeWidth={1.5} />
-        </button>
+    <>
+      <nav className="navbar">
+        <div className="nav-inner">
+          {/* Left */}
+          <button className="nav-btn" onClick={() => setOpen(true)}>
+            <Menu size={20} strokeWidth={1.5} />
+          </button>
 
-        {/* Center */}
-        <div className="nav-brand" onClick={() => router.push("/")}>
-          <span className="brand-main">ADHAL</span>
-          <span className="brand-sub">Cosmetics</span>
+          {/* Center */}
+          <div className="nav-brand">
+            <span className="brand-main">Adhal</span>
+            <span className="brand-sub">Cosmetics</span>
+          </div>
+
+          {/* Right */}
+          <button className="nav-btn" onClick={() => router.push("/products")}>
+            <ShoppingBag size={20} strokeWidth={1.5} />
+          </button>
         </div>
+      </nav>
 
-        {/* Right */}
-        <button className="nav-btn" onClick={() => router.push("/products")}>
-          <ShoppingBag size={20} color="#2b2b2b" strokeWidth={1.5} />
-        </button>
-      </div>
-    </nav>
+      {/* Drawer */}
+      {open && <SideDrawer onClose={() => setOpen(false)} />}
+    </>
   );
 }

@@ -15,6 +15,9 @@ export default function HomePage() {
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [reviews, setReviews] = useState([]);
+  const [currentReview, setCurrentReview] = useState(0);
+  const [showPopup, setShowPopup] = useState(false);
 
   const scrollNext = () => {
     window.scrollTo({
@@ -47,6 +50,34 @@ export default function HomePage() {
   }, [products]);
 
   useEffect(() => {
+    if (!reviews.length) return;
+
+    let index = 0;
+
+    const showNext = () => {
+      if (index >= reviews.length) return; // stop after all shown
+
+      setCurrentReview(index);
+      setShowPopup(true);
+
+      // hide after 3.5s
+      setTimeout(() => {
+        setShowPopup(false);
+      }, 3500);
+
+      index++;
+
+      // schedule next
+      setTimeout(showNext, 6000);
+    };
+
+    // start after small delay (important)
+    const startTimeout = setTimeout(showNext, 2500);
+
+    return () => clearTimeout(startTimeout);
+  }, [reviews]);
+
+  useEffect(() => {
     const fetchProducts = async () => {
       const { data, error } = await supabase.from("products").select("*");
 
@@ -58,6 +89,20 @@ export default function HomePage() {
     };
 
     fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      const { data } = await supabase
+        .from("reviews")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      setReviews(data || []);
+    };
+
+    fetchReviews();
   }, []);
 
   return (
@@ -211,6 +256,25 @@ export default function HomePage() {
           Browse All Products
         </button>
       </section>
+
+      {showPopup && reviews[currentReview] && (
+        <div className="review-popup">
+          <div className="review-popup-header">
+            <div className="avatar">
+              {reviews[currentReview].name?.charAt(0).toUpperCase()}
+            </div>
+
+            <div className="review-meta">
+              <span className="review-name">{reviews[currentReview].name}</span>
+              <span className="review-stars">
+                {"★".repeat(reviews[currentReview].rating)}
+              </span>
+            </div>
+          </div>
+
+          <p className="review-text">“{reviews[currentReview].comment}”</p>
+        </div>
+      )}
 
       {/* FOOTER */}
       <footer className="footer">
