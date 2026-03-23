@@ -18,73 +18,115 @@ export default function ProductCard({
 }) {
   return (
     <div
-      className="h-full bg-white border border-gray-300 rounded-xl p-4
-             shadow-sm transition
-             hover:shadow-xl hover:-translate-y-1"
+      className="
+        h-full flex flex-col
+        bg-white rounded-2xl p-3
+        border border-gray-100
+        shadow-sm
+        transition
+        active:scale-[0.98]
+      "
     >
       {/* Image */}
-      <div className="h-48 rounded-lg mb-4 overflow-hidden bg-gray-100">
+      <div className="h-44 rounded-xl mb-3 overflow-hidden bg-[#f5f4ef]">
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
+          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
             No image
           </div>
         )}
       </div>
 
       {/* Product Info */}
-      <div className="mb-4">
-        <h2 className="font-semibold text-gray-900 text-[15px] leading-snug">
+      <div className="flex-1">
+        <h2 className="text-[15px] leading-snug text-gray-900 font-medium">
           {product.name}
         </h2>
 
-        <p className="text-rose-600 font-semibold text-lg mt-1">
+        {/* Description */}
+        {product.description && (
+          <p className="text-[12.5px] text-gray-500 mt-1 line-clamp-2">
+            {product.description}
+          </p>
+        )}
+
+        <p className="text-[#6b7d3a] font-semibold text-lg mt-2">
           ₹{product.price}
         </p>
       </div>
 
-      {/* Spacer pushes controls to bottom */}
-      <div className="mt-auto pt-4">
-        {/* Quantity Controls */}
-        <div
-          className="flex items-center justify-between
-                border border-gray-300 rounded-lg
-                px-3 py-2 bg-white shadow-sm"
-        >
+      {/* Controls */}
+      <div className="mt-3">
+        {quantity === 0 ? (
           <button
-            onClick={() => onQuantityChange(product, quantity - 1)}
-            className="w-10 h-10 sm:w-9 sm:h-9
-            flex items-center justify-center
-            rounded-full border border-gray-300
-            text-gray-700 text-lg
-            hover:bg-gray-100 active:scale-95"
-            aria-label="Decrease quantity"
-            disabled={quantity === 0}
+            onClick={() => onQuantityChange(product, 1)}
+            className="
+              w-full
+              bg-[#6b7d3a]
+              text-white
+              py-2
+              rounded-full
+              text-sm
+              font-medium
+              shadow-sm
+              active:scale-[0.98]
+            "
           >
-            −
+            Add
           </button>
-
-          <span className="font-semibold text-gray-900 text-base">
-            {quantity}
-          </span>
-
-          <button
-            onClick={() => onQuantityChange(product, quantity + 1)}
-            className="w-10 h-10 sm:w-9 sm:h-9
-            flex items-center justify-center
-            rounded-full border border-gray-300
-            text-gray-700 text-lg
-            hover:bg-gray-100 active:scale-95"
-            aria-label="Increase quantity"
+        ) : (
+          <div
+            className="
+              flex items-center justify-between
+              bg-[#f5f4ef]
+              rounded-full
+              px-2 py-1
+            "
           >
-            +
-          </button>
-        </div>
+            <button
+              onClick={() => onQuantityChange(product, quantity - 1)}
+              className="
+                w-8 h-8
+                flex items-center justify-center
+                rounded-full
+                bg-white
+                text-gray-700
+                text-lg
+                shadow-sm
+                active:scale-90
+              "
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+
+            <span className="text-sm font-semibold text-gray-900">
+              {quantity}
+            </span>
+
+            <button
+              onClick={() => onQuantityChange(product, quantity + 1)}
+              className="
+                w-8 h-8
+                flex items-center justify-center
+                rounded-full
+                bg-white
+                text-gray-700
+                text-lg
+                shadow-sm
+                active:scale-90
+              "
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -224,7 +224,7 @@ export default function AdminClient() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center px-4">
         <div className="w-full max-w-sm bg-white border border-gray-300 rounded-xl p-6 shadow-sm mx-auto space-y-10">
           <h1 className="text-xl font-semibold text-gray-900 mb-4">
             Admin Login
@@ -260,7 +260,7 @@ export default function AdminClient() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 px-4 py-8">
+    <div className="min-h-screen bg-[#faf9f6] px-4 py-8">
       <div className="max-w-7xl mx-auto space-y-10">
         {/* Header */}
         <div className="flex justify-between items-center">

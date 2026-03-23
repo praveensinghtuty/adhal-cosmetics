@@ -1,23 +1,40 @@
-import Link from "next/link";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Menu, ShoppingBag } from "lucide-react";
 
 export default function Navbar() {
-  return (
-    <nav className="bg-white border-b">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Brand */}
-        <Link href="/" className="text-rose-600 font-bold">
-          Homemade Cosmetics
-        </Link>
+  const [scrolled, setScrolled] = useState(false);
+  const router = useRouter();
 
-        {/* Links */}
-        <div className="space-x-6">
-          <Link href="/" className="text-gray-700 hover:text-rose-600">
-            Home
-          </Link>
-          <Link href="/products" className="text-gray-700 hover:text-rose-600">
-            Products
-          </Link>
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
+      <div className="nav-inner">
+        {/* Left */}
+        <button className="nav-btn">
+          <Menu size={20} color="#2b2b2b" strokeWidth={1.5} />
+        </button>
+
+        {/* Center */}
+        <div className="nav-brand">
+          <span className="brand-main">ADHAL</span>
+          <span className="brand-sub">Cosmetics</span>
         </div>
+
+        {/* Right */}
+        <button className="nav-btn" onClick={() => router.push("/products")}>
+          <ShoppingBag size={20} color="#2b2b2b" strokeWidth={1.5} />
+        </button>
       </div>
     </nav>
   );

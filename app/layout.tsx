@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className="min-h-screen flex flex-col bg-stone-50 text-gray-900
+        className="min-h-screen flex flex-col bg-[#faf9f6] text-gray-900
                  pb-[env(safe-area-inset-bottom)]"
       >
         <Navbar />

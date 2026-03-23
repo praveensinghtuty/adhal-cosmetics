@@ -95,21 +95,21 @@ export default function ProductsClient() {
   const baseChip =
     "px-4 py-1.5 rounded-full text-sm font-medium border transition whitespace-nowrap";
 
-  const activeChip = "bg-rose-600 text-white border-rose-600 shadow-sm";
+  const activeChip = "bg-[#6b7d3a] text-white border-[#6b7d3a] shadow-sm";
 
   const inactiveChip =
-    "bg-white text-gray-700 border-gray-300 hover:border-rose-600 hover:text-rose-600";
+    "bg-white text-gray-700 border-gray-300 hover:border-[#6b7d3a] hover:text-[#6b7d3a]";
 
   return (
     <div
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8
-                py-6 pb-28 bg-stone-50"
+                py-6 pb-28 bg-[#faf9f6]"
     >
-      <h1 className="text-3xl font-bold mb-8 text-gray-900">Our Products</h1>
+      <h1 className="text-3xl mb-8 text-gray-900 font-serif">Our Products</h1>
 
       {/* Filters */}
       <div className="mb-10">
-        <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-4 rounded-xl border border-gray-200">
+        <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
           <button
             onClick={() => setSelectedTag(null)}
             className={`${baseChip} ${
@@ -161,18 +161,19 @@ export default function ProductsClient() {
           <button
             onClick={() => setShowModal(true)}
             className="
-        w-full sm:w-auto
-        flex items-center justify-between sm:justify-center
-        gap-3
-        bg-green-600 hover:bg-green-700
-        text-white
-        font-semibold
-        px-6 py-3
-        rounded-xl
-        shadow-lg
-        transition
-        active:scale-[0.98]
-      "
+w-full sm:w-auto
+flex items-center justify-between sm:justify-center
+gap-3
+bg-[#6b7d3a]
+hover:bg-[#5a6a32]
+text-white
+font-medium
+px-6 py-3
+rounded-full
+shadow-md
+transition
+active:scale-[0.98]
+"
           >
             <span>Place Order</span>
             <span className="bg-white/20 px-3 py-1 rounded-lg text-sm">
