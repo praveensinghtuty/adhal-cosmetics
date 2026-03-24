@@ -15,6 +15,9 @@ interface Review {
   name: string;
   rating: number;
   comment: string;
+  product_id: string | null;
+  product_name: string | null;
+  created_at: string;
 }
 
 export default function HomePage() {
@@ -280,6 +283,11 @@ export default function HomePage() {
           </div>
 
           <p className="review-text">“{reviews[currentReview].comment}”</p>
+          {reviews[currentReview].product_name && (
+            <div className="review-product">
+              {reviews[currentReview].product_name}
+            </div>
+          )}
         </div>
       )}
 

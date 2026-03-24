@@ -8,6 +8,14 @@ type Review = {
   name: string;
   rating: number;
   comment: string;
+  product_id: string | null;
+  product_name: string | null;
+  created_at: string;
+};
+
+type Product = {
+  id: string;
+  name: string;
 };
 
 export default function ReviewsPage() {
@@ -15,6 +23,18 @@ export default function ReviewsPage() {
   const [name, setName] = useState("");
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState("");
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data } = await supabase.from("products").select("id, name");
+
+      setProducts(data || []);
+    };
+
+    fetchProducts();
+  }, []);
 
   const fetchReviews = async () => {
     const { data } = await supabase
@@ -32,7 +52,17 @@ export default function ReviewsPage() {
   const addReview = async () => {
     if (!name || !comment) return;
 
-    await supabase.from("reviews").insert([{ name, rating, comment }]);
+    const product = products.find((p: Product) => p.id === selectedProduct);
+
+    await supabase.from("reviews").insert([
+      {
+        name,
+        rating,
+        comment,
+        product_id: selectedProduct || null,
+        product_name: product?.name || null,
+      },
+    ]);
 
     setName("");
     setComment("");
@@ -52,6 +82,17 @@ export default function ReviewsPage() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
+        <select
+          value={selectedProduct}
+          onChange={(e) => setSelectedProduct(e.target.value)}
+        >
+          <option value="">Select Product</option>
+          {products.map((p: Product) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
 
         <div className="star-row">
           {[1, 2, 3, 4, 5].map((star) => (
@@ -83,6 +124,9 @@ export default function ReviewsPage() {
               <span>{"⭐".repeat(r.rating)}</span>
             </div>
             <p>{r.comment}</p>
+            {r.product_name && (
+              <span className="review-product">{r.product_name}</span>
+            )}
           </div>
         ))}
       </div>
