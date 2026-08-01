@@ -221,6 +221,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .delivery-field textarea { min-height: 74px; resize: vertical; }
 .delivery-field input:focus, .delivery-field textarea:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgba(109,125,82,.12); }
 .delivery-field .invalid { border-color: #b9564d; background: #fff9f8; }
+.field-hint { color: #a4453e; font-size: 10px; line-height: 1.35; }
 .delivery-error { margin: 12px 0 0; color: #a4453e; font-size: 12px; }
 .modal-actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
 .filter-modal-shell { align-items: center; justify-content: center; padding: 20px; }
