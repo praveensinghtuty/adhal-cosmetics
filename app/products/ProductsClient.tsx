@@ -5,6 +5,7 @@ import { Check, SlidersHorizontal, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import ProductCard from "@/components/ProductCard";
 import OrderModal from "@/components/OrderModal";
+import ProductSearch from "@/components/ProductSearch";
 
 type Product = { id: string; name: string; description: string | null; price: number; image_url: string | null; tags: string[]; };
 const CART_STORAGE_KEY = "homemade_cosmetics_cart";
@@ -15,7 +16,7 @@ const SHOP_CATEGORIES = [
   { name: "Hair Care", image: "/images/categories/hair-care.svg", keywords: ["hair", "shampoo", "conditioner", "scalp", "shikakai"] },
 ] as const;
 
-export default function ProductsClient() {
+export default function ProductsClient({ initialSearch = "" }: { initialSearch?: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<Record<string, Product & { quantity: number }>>(() => {
     if (typeof window === "undefined") return {};
@@ -28,6 +29,7 @@ export default function ProductsClient() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [draftTags, setDraftTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(initialSearch.trim());
 
   useEffect(() => {
     supabase.from("products").select("id,name,description,price,image_url,tags").eq("is_active", true).then(({ data }) => setProducts(data || []));
@@ -46,7 +48,9 @@ export default function ProductsClient() {
   const filtered = products.filter((product) => {
     const matchesSelectedCategory = !selectedCategory || matchesCategory(product, selectedCategory);
     const matchesSelectedTags = selectedTags.length === 0 || selectedTags.some((tag) => product.tags?.includes(tag));
-    return matchesSelectedCategory && matchesSelectedTags;
+    const searchable = `${product.name} ${product.description || ""} ${(product.tags || []).join(" ")}`.toLowerCase();
+    const matchesSearch = !searchQuery || searchable.includes(searchQuery.toLowerCase());
+    return matchesSelectedCategory && matchesSelectedTags && matchesSearch;
   });
   const quantity = Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
   const total = Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -58,9 +62,10 @@ export default function ProductsClient() {
   const toggleTag = (tag: string) => setSelectedTags((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]);
   const openFilters = () => { setDraftTags(selectedTags); setShowFilters(true); };
   const toggleDraftTag = (tag: string) => setDraftTags((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]);
-  const clearAllFilters = () => { setSelectedCategory(null); setSelectedTags([]); };
+  const clearAllFilters = () => { setSelectedCategory(null); setSelectedTags([]); setSearchQuery(""); };
 
   return <main className="catalog-page"><div className="site-shell">
+    <div className="catalog-search-wrap"><ProductSearch initialValue={initialSearch} /></div>
     <header className="catalog-header"><p className="eyebrow">The collection</p><h1 className="section-title">Everyday care, made slowly.</h1><p className="section-copy">Explore handmade essentials for your skin and hair. Simple formulas, botanical ingredients, and no unnecessary extras.</p></header>
     {categories.length > 0 && <section className="category-section" aria-labelledby="category-title">
       <div className="category-heading"><div><p className="eyebrow">Find your ritual</p><h2 id="category-title">Shop by category</h2></div><p>Choose what your routine needs today.</p></div>
@@ -74,8 +79,8 @@ export default function ProductsClient() {
     </section>}
     <section id="catalog-results" className="catalog-results">
       <div className="catalog-toolbar"><div className="quick-filters" aria-label="Product filters"><div className="filter-scroll"><button className={`filter-chip ${selectedCategory === null && selectedTags.length === 0 ? "active" : ""}`} onClick={clearAllFilters}>All products</button>{quickTags.map((tag) => <button key={tag} className={`filter-chip ${selectedTags.includes(tag) ? "active" : ""}`} onClick={() => toggleTag(tag)}>{tag}</button>)}</div><button className="filter-chip more-filter-button" onClick={openFilters}><SlidersHorizontal size={14} /> More filters{selectedTags.length > 0 && <span>{selectedTags.length}</span>}</button></div></div>
-      {(selectedCategory || selectedTags.length > 0) && <div className="active-filters"><span>Showing:</span>{selectedCategory && <button onClick={() => setSelectedCategory(null)}>{selectedCategory} <X size={12} /></button>}{selectedTags.map((tag) => <button key={tag} onClick={() => toggleTag(tag)}>{tag} <X size={12} /></button>)}<button className="clear-filters" onClick={clearAllFilters}>Clear all</button></div>}
-      <div className="results-summary"><h2>{selectedCategory || "All products"}</h2><span>{filtered.length} {filtered.length === 1 ? "product" : "products"}</span></div>
+      {(selectedCategory || selectedTags.length > 0 || searchQuery) && <div className="active-filters"><span>Showing:</span>{searchQuery && <button onClick={() => setSearchQuery("")}>Search: “{searchQuery}” <X size={12} /></button>}{selectedCategory && <button onClick={() => setSelectedCategory(null)}>{selectedCategory} <X size={12} /></button>}{selectedTags.map((tag) => <button key={tag} onClick={() => toggleTag(tag)}>{tag} <X size={12} /></button>)}<button className="clear-filters" onClick={clearAllFilters}>Clear all</button></div>}
+      <div className="results-summary"><h2>{searchQuery ? `Results for “${searchQuery}”` : selectedCategory || "All products"}</h2><span>{filtered.length} {filtered.length === 1 ? "product" : "products"}</span></div>
       {filtered.length ? <div className="catalog-grid">{filtered.map((product) => <ProductCard key={product.id} product={product} quantity={cart[product.id]?.quantity || 0} onQuantityChange={updateQuantity} />)}</div> : <div className="empty-state">No products found in this collection.</div>}
     </section>
   </div>

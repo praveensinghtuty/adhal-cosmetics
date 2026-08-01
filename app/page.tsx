@@ -1,12 +1,12 @@
 "use client";
 
 import { supabase } from "@/lib/supabaseClient";
+import ProductSearch from "@/components/ProductSearch";
 import { ArrowRight, Check, Droplets, FlaskConical, Heart, Leaf } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface Product { id: string; name: string; price: number; image_url: string; }
-interface Review { id: string; name: string; rating: number; comment: string; product_name: string | null; }
 
 const principles = [
   { icon: Leaf, title: "Botanical first", text: "Herbs, oils and time-tested ingredients chosen with intention." },
@@ -17,31 +17,16 @@ const principles = [
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [currentReview, setCurrentReview] = useState(0);
-  const [showPopup, setShowPopup] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     supabase.from("products").select("id,name,price,image_url").eq("is_active", true).limit(3).then(({ data }) => setProducts(data || []));
-    supabase.from("reviews").select("id,name,rating,comment,product_name").order("created_at", { ascending: false }).limit(4).then(({ data }) => setReviews(data || []));
   }, []);
-
-  useEffect(() => {
-    if (!reviews.length) return;
-    let hideTimer: ReturnType<typeof setTimeout>;
-    const show = () => {
-      setShowPopup(true);
-      hideTimer = setTimeout(() => { setShowPopup(false); setCurrentReview((value) => (value + 1) % reviews.length); }, 4200);
-    };
-    const first = setTimeout(show, 3000);
-    const repeat = setInterval(show, 8500);
-    return () => { clearTimeout(first); clearTimeout(hideTimer); clearInterval(repeat); };
-  }, [reviews.length]);
 
   return (
     <main className="home">
       <section className="hero">
+        <div className="page-search-wrap site-shell"><ProductSearch /></div>
         <div className="site-shell hero-inner">
           <div className="hero-content">
             <p className="eyebrow">Rooted in nature · Made by hand</p>
@@ -79,8 +64,6 @@ export default function HomePage() {
       </div></section>
 
       <section className="cta-wrap"><div className="site-shell"><div className="cta-card"><p className="eyebrow">Your ritual starts here</p><h2 className="section-title">Care that feels good—and makes sense.</h2><p className="section-copy">Find a simpler, more natural rhythm for your everyday skin and hair care.</p><button className="button-primary" onClick={() => router.push("/products")}>Browse all products <ArrowRight size={16} /></button></div></div></section>
-
-      {showPopup && reviews[currentReview] && <aside className="review-popup"><div className="review-popup-header"><div className="avatar">{reviews[currentReview].name.charAt(0).toUpperCase()}</div><div className="review-meta"><span className="review-name">{reviews[currentReview].name}</span><span className="review-stars">{"★".repeat(reviews[currentReview].rating)}</span></div></div><p className="review-text">“{reviews[currentReview].comment}”</p>{reviews[currentReview].product_name && <span className="review-product">{reviews[currentReview].product_name}</span>}</aside>}
 
       <footer className="footer"><div className="site-shell footer-inner"><span>© {new Date().getFullYear()} Adhal Cosmetics</span><span>Small-batch herbal care, made thoughtfully.</span></div></footer>
     </main>
