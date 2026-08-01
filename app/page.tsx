@@ -1,301 +1,88 @@
 "use client";
+
 import { supabase } from "@/lib/supabaseClient";
-import { useEffect, useState, useRef } from "react";
+import { ArrowRight, Check, Droplets, FlaskConical, Heart, Leaf } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string;
-}
+interface Product { id: string; name: string; price: number; image_url: string; }
+interface Review { id: string; name: string; rating: number; comment: string; product_name: string | null; }
 
-interface Review {
-  id: string;
-  name: string;
-  rating: number;
-  comment: string;
-  product_id: string | null;
-  product_name: string | null;
-  created_at: string;
-}
+const principles = [
+  { icon: Leaf, title: "Botanical first", text: "Herbs, oils and time-tested ingredients chosen with intention." },
+  { icon: FlaskConical, title: "Small batches", text: "Handmade in limited quantities for freshness and attention." },
+  { icon: Droplets, title: "Nothing harsh", text: "No sulphates, parabens or unnecessary artificial fragrance." },
+  { icon: Heart, title: "Made with care", text: "Gentle daily essentials created for real skin and hair." },
+];
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const router = useRouter();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [currentReview, setCurrentReview] = useState(0);
   const [showPopup, setShowPopup] = useState(false);
-
-  const scrollNext = () => {
-    window.scrollTo({
-      top: window.innerHeight - 64,
-      behavior: "smooth",
-    });
-  };
+  const router = useRouter();
 
   useEffect(() => {
-    if (!scrollRef.current || products.length === 0) return;
-
-    const el = scrollRef.current;
-
-    const interval = setInterval(() => {
-      setActiveIndex((prev) => {
-        const next = (prev + 1) % products.length;
-
-        const cardWidth = el.clientWidth * 0.75 + 16;
-
-        el.scrollTo({
-          left: next * cardWidth,
-          behavior: "smooth",
-        });
-
-        return next;
-      });
-    }, 3500);
-
-    return () => clearInterval(interval);
-  }, [products]);
+    supabase.from("products").select("id,name,price,image_url").eq("is_active", true).limit(3).then(({ data }) => setProducts(data || []));
+    supabase.from("reviews").select("id,name,rating,comment,product_name").order("created_at", { ascending: false }).limit(4).then(({ data }) => setReviews(data || []));
+  }, []);
 
   useEffect(() => {
     if (!reviews.length) return;
-
-    let index = 0;
-
-    const showNext = () => {
-      if (index >= reviews.length) return; // stop after all shown
-
-      setCurrentReview(index);
+    let hideTimer: ReturnType<typeof setTimeout>;
+    const show = () => {
       setShowPopup(true);
-
-      // hide after 3.5s
-      setTimeout(() => {
-        setShowPopup(false);
-      }, 3500);
-
-      index++;
-
-      // schedule next
-      setTimeout(showNext, 6000);
+      hideTimer = setTimeout(() => { setShowPopup(false); setCurrentReview((value) => (value + 1) % reviews.length); }, 4200);
     };
-
-    // start after small delay (important)
-    const startTimeout = setTimeout(showNext, 2500);
-
-    return () => clearTimeout(startTimeout);
-  }, [reviews]);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      const { data, error } = await supabase.from("products").select("*");
-
-      if (error) {
-        console.error(error);
-      } else {
-        setProducts(data);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  useEffect(() => {
-    const fetchReviews = async () => {
-      const { data } = await supabase
-        .from("reviews")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      setReviews(data || []);
-    };
-
-    fetchReviews();
-  }, []);
+    const first = setTimeout(show, 3000);
+    const repeat = setInterval(show, 8500);
+    return () => { clearTimeout(first); clearTimeout(hideTimer); clearInterval(repeat); };
+  }, [reviews.length]);
 
   return (
     <main className="home">
-      {/* HERO */}
       <section className="hero">
-        <div className="hero-overlay">
+        <div className="site-shell hero-inner">
           <div className="hero-content">
-            <h1>
-              Organic. Handmade.
-              <br />
-              Honest Care.
-            </h1>
-
-            <p>
-              Thoughtfully crafted herbal cosmetics made in small batches to
-              nourish your skin and hair.
-            </p>
-
+            <p className="eyebrow">Rooted in nature · Made by hand</p>
+            <h1 className="display-title">Honest care,<br />grown slowly.</h1>
+            <p className="hero-lead">Small-batch herbal care for skin and hair—thoughtfully made with familiar botanicals and nothing you do not need.</p>
             <div className="hero-actions">
-              <button
-                className="primary"
-                onClick={() => router.push("/products")}
-              >
-                Shop Now
-              </button>
-              <button className="secondary" onClick={scrollNext}>
-                Explore more
-              </button>
+              <button className="button-primary" onClick={() => router.push("/products")}>Shop the collection <ArrowRight size={16} /></button>
+              <button className="button-secondary" onClick={() => document.querySelector("#our-story")?.scrollIntoView()}>Our philosophy</button>
             </div>
-            <div className="hero-divider" />
-            <div className="scroll-indicator">
-              <span />
-            </div>
+            <div className="hero-proof"><div className="proof-dots"><span>A</span><span>R</span><span>S</span></div><span><strong>Loved by mindful routines</strong><br />Simple care, thoughtfully shared</span></div>
           </div>
         </div>
       </section>
-      <div className="half-screen-wrapper">
-        {/* PHILOSOPHY */}
-        <section className="section philosophy">
-          <div className="philo-head">
-            <h2>Rooted in Tradition</h2>
-            <p>
-              Crafted with care using time-tested herbs, oils, and botanicals —
-              pure, gentle, and made without shortcuts.
-            </p>
-          </div>
 
-          <div className="philo-grid">
-            <div className="philo-item">
-              <span>🌿</span>
-              <p>100% Herbal Ingredients</p>
-            </div>
-
-            <div className="philo-item">
-              <span>🧼</span>
-              <p>Handmade in Small Batches</p>
-            </div>
-
-            <div className="philo-item">
-              <span>❌</span>
-              <p>No Sulphates or Parabens</p>
-            </div>
-
-            <div className="philo-item">
-              <span>♻️</span>
-              <p>Eco-conscious Choices</p>
-            </div>
-          </div>
-        </section>
-
-        {/* FEATURED PRODUCTS */}
-        <section className="section products">
-          <div className="products-head">
-            <h2>Featured Products</h2>
-            <p className="section-sub">
-              Handmade essentials for your daily care
-            </p>
-          </div>
-
-          <div className="carousel" ref={scrollRef}>
-            {products.map((product, index) => (
-              <div className="carousel-item" key={product.id}>
-                <div
-                  className="product-card-soft"
-                  onClick={() => router.push("/products")}
-                >
-                  <img src={product.image_url} alt={product.name} />
-
-                  <div className="product-info">
-                    <h3>{product.name}</h3>
-                    <p className="price">₹{product.price}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* DOTS */}
-          <div className="dots">
-            {products.map((_, index) => (
-              <span
-                key={index}
-                className={`dot ${index === activeIndex ? "active" : ""}`}
-              />
-            ))}
-          </div>
-
-          <button className="link-btn" onClick={() => router.push("/products")}>
-            View All Products →
-          </button>
-        </section>
-      </div>
-      {/* INGREDIENT STORY */}
-      <section className="section ingredients alt">
-        <h2>Powered by Nature</h2>
-        <p>
-          From rosemary and shikakai to saffron and charcoal, every ingredient
-          is carefully selected for its proven benefits — nothing artificial,
-          nothing unnecessary.
-        </p>
-
-        <ul>
-          <li>Cold-pressed oils</li>
-          <li>Herbal infusions</li>
-          <li>No artificial fragrance</li>
-          <li>Safe for long-term use</li>
-        </ul>
-      </section>
-
-      {/* WHY ADHAL */}
-      <section className="section why">
-        <h2>Why Choose Adhal?</h2>
-        <p className="section-sub">
-          Thoughtfully crafted for clean and conscious care
-        </p>
-
-        <ul>
-          <li>✔ Handmade, not factory-produced</li>
-          <li>✔ Transparent ingredient lists</li>
-          <li>✔ Inspired by traditional Indian self-care</li>
-          <li>✔ Loved by clean beauty seekers</li>
-        </ul>
-      </section>
-
-      {/* CTA */}
-      <section className="cta">
-        <h2>Begin Your Natural Care Journey</h2>
-        <p>Discover products that respect your skin, hair, and nature.</p>
-        <button className="primary" onClick={() => router.push("/products")}>
-          Browse All Products
-        </button>
-      </section>
-
-      {showPopup && reviews[currentReview] && (
-        <div className="review-popup">
-          <div className="review-popup-header">
-            <div className="avatar">
-              {reviews[currentReview].name?.charAt(0).toUpperCase()}
-            </div>
-
-            <div className="review-meta">
-              <span className="review-name">{reviews[currentReview].name}</span>
-              <span className="review-stars">
-                {"★".repeat(reviews[currentReview].rating)}
-              </span>
-            </div>
-          </div>
-
-          <p className="review-text">“{reviews[currentReview].comment}”</p>
-          {reviews[currentReview].product_name && (
-            <div className="review-product">
-              {reviews[currentReview].product_name}
-            </div>
-          )}
+      <section className="home-section" id="our-story">
+        <div className="site-shell intro-grid">
+          <div><p className="eyebrow">The Adhal way</p><h2 className="section-title">Tradition, made relevant for today.</h2><p className="section-copy">We pair generations-old ingredient wisdom with a slower, more transparent way of making personal care.</p></div>
+          <div className="principles">{principles.map(({ icon: Icon, title, text }) => <article className="principle-card" key={title}><div className="principle-icon"><Icon size={19} strokeWidth={1.7} /></div><h3>{title}</h3><p>{text}</p></article>)}</div>
         </div>
-      )}
+      </section>
 
-      {/* FOOTER */}
-      <footer className="footer">
-        <p>About · Contact · Instagram · WhatsApp</p>
-        <small>© Adhal Cosmetics</small>
-      </footer>
+      <section className="home-section featured-section">
+        <div className="site-shell">
+          <div className="section-heading-row"><div><p className="eyebrow">Everyday rituals</p><h2 className="section-title">Made for your daily care.</h2></div><button className="text-link" onClick={() => router.push("/products")}>Explore all products <ArrowRight size={16} /></button></div>
+          <div className="featured-grid">
+            {products.map((product) => <article className="featured-card" key={product.id} onClick={() => router.push("/products")}><div className="featured-image"><img src={product.image_url} alt={product.name} /></div><div className="featured-info"><h3>{product.name}</h3><span>₹{product.price}</span></div></article>)}
+            {!products.length && [1,2,3].map((item) => <div className="featured-card" key={item}><div className="featured-image" /><div className="featured-info"><h3>Made with care</h3><span>—</span></div></div>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="home-section"><div className="site-shell story-grid">
+        <div className="story-visual"><div className="story-note"><strong>Ingredients you recognise</strong><span>Rosemary, shikakai, saffron, charcoal and cold-pressed oils.</span></div></div>
+        <div><p className="eyebrow">Powered by nature</p><h2 className="section-title">Fewer ingredients.<br />More intention.</h2><p className="section-copy">Each formula begins with a purpose. We select botanicals for what they do, keep our recipes uncomplicated, and make every batch with patience.</p><ul className="check-list">{["Cold-pressed, botanical oils", "Herbal infusions made in small batches", "Transparent ingredient choices", "Gentle enough for lasting routines"].map((item) => <li key={item}><span><Check size={14} /></span>{item}</li>)}</ul></div>
+      </div></section>
+
+      <section className="cta-wrap"><div className="site-shell"><div className="cta-card"><p className="eyebrow">Your ritual starts here</p><h2 className="section-title">Care that feels good—and makes sense.</h2><p className="section-copy">Find a simpler, more natural rhythm for your everyday skin and hair care.</p><button className="button-primary" onClick={() => router.push("/products")}>Browse all products <ArrowRight size={16} /></button></div></div></section>
+
+      {showPopup && reviews[currentReview] && <aside className="review-popup"><div className="review-popup-header"><div className="avatar">{reviews[currentReview].name.charAt(0).toUpperCase()}</div><div className="review-meta"><span className="review-name">{reviews[currentReview].name}</span><span className="review-stars">{"★".repeat(reviews[currentReview].rating)}</span></div></div><p className="review-text">“{reviews[currentReview].comment}”</p>{reviews[currentReview].product_name && <span className="review-product">{reviews[currentReview].product_name}</span>}</aside>}
+
+      <footer className="footer"><div className="site-shell footer-inner"><span>© {new Date().getFullYear()} Adhal Cosmetics</span><span>Small-batch herbal care, made thoughtfully.</span></div></footer>
     </main>
   );
 }

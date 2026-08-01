@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 700">
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#d6dfcb"/><stop offset="1" stop-color="#758666"/></linearGradient><linearGradient id="bottle" x2="1" y2="1"><stop stop-color="#5d6c4e"/><stop offset="1" stop-color="#293426"/></linearGradient></defs>
+  <rect width="600" height="700" fill="url(#bg)"/><circle cx="90" cy="100" r="170" fill="#fff" opacity=".1"/>
+  <path d="M90 625c57-200 130-343 219-430M121 544c-59-51-87-108-83-171 73 9 118 53 135 132M204 398c-31-78-27-145 13-201 57 39 72 99 44 179M293 282c25-74 68-119 130-134 11 66-18 115-87 149" fill="none" stroke="#43533c" stroke-width="18" stroke-linecap="round"/>
+  <ellipse cx="385" cy="603" rx="142" ry="27" fill="#243022" opacity=".2"/><path d="M305 289h160l25 253c3 34-22 62-56 62h-98c-34 0-59-28-56-62z" fill="url(#bottle)" stroke="#fff" stroke-opacity=".35" stroke-width="8"/><rect x="338" y="210" width="94" height="94" rx="17" fill="#252d22"/><path d="M326 397h118v109H326z" fill="#e7eadf" opacity=".88"/><path d="M385 418c27 32 27 49 0 70-27-21-27-38 0-70z" fill="#637451"/>
+</svg>
