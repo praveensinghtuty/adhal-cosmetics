@@ -95,12 +95,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .featured-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
 .featured-card { color: var(--ink); border-radius: 24px; overflow: hidden; background: var(--paper); cursor: pointer; transition: .3s ease; }
 .featured-card:hover { transform: translateY(-6px); }
-.featured-image { aspect-ratio: 1.15; overflow: hidden; background: #e8eadf; }
+.featured-image { aspect-ratio: 1.15; overflow: hidden; position: relative; background: #e8eadf; }
 .featured-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
 .featured-card:hover img { transform: scale(1.04); }
 .featured-info { padding: 20px 22px 22px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .featured-info h3 { margin: 0; font-family: var(--serif); font-size: 20px; font-weight: 400; }
 .featured-info span { color: var(--sage-dark); font-weight: 700; white-space: nowrap; }
+.featured-info .featured-price { display: flex; align-items: baseline; gap: 6px; }
+.featured-price del { color: #8b8f87; font-size: 12px; font-weight: 500; }
 
 .story-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px,8vw,100px); align-items: center; }
 .story-visual { min-height: 520px; border-radius: 32px; position: relative; overflow: hidden; background: url('/images/hero-rosemary.png') 70% center/cover; }
@@ -173,13 +175,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   transform: translateY(-5px);
 }
 .product-card > div:nth-child(2) { min-height: 74px; }
-.product-image-wrap { aspect-ratio: 1; margin-bottom: 18px; border-radius: 19px; overflow: hidden; background: #e7e9df; }
+.product-image-wrap { aspect-ratio: 1; margin-bottom: 18px; border-radius: 19px; overflow: hidden; position: relative; background: #e7e9df; }
 .product-image-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
 .product-card:hover img { transform: scale(1.035); }
 .product-card h2 { margin: 0; font-family: var(--serif); font-size: 21px; font-weight: 400; }
 .product-description { min-height: 40px; margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .product-meta { margin: 16px 0 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.product-price { color: var(--sage-dark); font-size: 18px; font-weight: 700; }
+.product-price { color: var(--sage-dark); display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px; font-size: 18px; font-weight: 700; }
+.product-price del { color: #8b8f87; font-size: 14px; font-weight: 500; }
+.sale-pill { position: absolute; z-index: 2; top: 12px; left: 12px; max-width: calc(100% - 24px); padding: 7px 11px; border-radius: 999px; color: white; background: #b33f53; box-shadow: 0 7px 20px rgba(99,23,37,.3); font-size: 10px; font-weight: 800; letter-spacing: .08em; line-height: 1; text-transform: uppercase; animation: sale-flash 1.35s ease-in-out infinite; }
+@keyframes sale-flash { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .58; transform: scale(.96); } }
 .add-button { min-width: 96px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; color: white; background: var(--sage-dark); font-size: 13px; font-weight: 700; cursor: pointer; }
 .quantity-control { min-width: 112px; height: 40px; padding: 3px; border-radius: 999px; display: flex; align-items: center; justify-content: space-between; background: var(--sage-soft); }
 .quantity-control button { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: var(--paper); cursor: pointer; }

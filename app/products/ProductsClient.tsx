@@ -6,8 +6,9 @@ import { supabase } from "@/lib/supabaseClient";
 import ProductCard from "@/components/ProductCard";
 import OrderModal from "@/components/OrderModal";
 import ProductSearch from "@/components/ProductSearch";
+import { getSalePrice, hasSale, SaleFields } from "@/lib/sales";
 
-type Product = { id: string; name: string; description: string | null; price: number; image_url: string | null; tags: string[]; };
+type Product = { id: string; name: string; description: string | null; price: number; image_url: string | null; tags: string[]; } & SaleFields;
 const CART_STORAGE_KEY = "homemade_cosmetics_cart";
 const SHOP_CATEGORIES = [
   { name: "Oils", image: "/images/categories/oils.svg", keywords: ["oil", "serum"] },
@@ -32,7 +33,22 @@ export default function ProductsClient({ initialSearch = "" }: { initialSearch?:
   const [searchQuery, setSearchQuery] = useState(initialSearch.trim());
 
   useEffect(() => {
-    supabase.from("products").select("id,name,description,price,image_url,tags").eq("is_active", true).then(({ data }) => setProducts(data || []));
+    supabase.from("products").select("id,name,description,price,image_url,tags,sale_name,discount_percentage").eq("is_active", true).then(({ data }) => {
+      const currentProducts = data || [];
+      setProducts(currentProducts);
+      setCart((current) => {
+        const next = { ...current };
+        currentProducts.forEach((product) => {
+          if (!next[product.id]) return;
+          next[product.id] = {
+            ...product,
+            price: hasSale(product) ? getSalePrice(product.price, product.discount_percentage) : product.price,
+            quantity: next[product.id].quantity,
+          };
+        });
+        return next;
+      });
+    });
   }, []);
   useEffect(() => { if (Object.keys(cart).length) localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart)); else localStorage.removeItem(CART_STORAGE_KEY); }, [cart]);
 

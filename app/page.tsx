@@ -5,8 +5,9 @@ import ProductSearch from "@/components/ProductSearch";
 import { ArrowRight, Check, Droplets, FlaskConical, Heart, Leaf } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatPrice, getSalePrice, hasSale, SaleFields } from "@/lib/sales";
 
-interface Product { id: string; name: string; price: number; image_url: string; }
+interface Product extends SaleFields { id: string; name: string; price: number; image_url: string; }
 
 const principles = [
   { icon: Leaf, title: "Botanical first", text: "Herbs, oils and time-tested ingredients chosen with intention." },
@@ -20,7 +21,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.from("products").select("id,name,price,image_url").eq("is_active", true).limit(3).then(({ data }) => setProducts(data || []));
+    supabase.from("products").select("id,name,price,image_url,sale_name,discount_percentage").eq("is_active", true).limit(3).then(({ data }) => setProducts(data || []));
   }, []);
 
   return (
@@ -52,7 +53,7 @@ export default function HomePage() {
         <div className="site-shell">
           <div className="section-heading-row"><div><p className="eyebrow">Everyday rituals</p><h2 className="section-title">Made for your daily care.</h2></div><button className="text-link" onClick={() => router.push("/products")}>Explore all products <ArrowRight size={16} /></button></div>
           <div className="featured-grid">
-            {products.map((product) => <article className="featured-card" key={product.id} onClick={() => router.push("/products")}><div className="featured-image"><img src={product.image_url} alt={product.name} /></div><div className="featured-info"><h3>{product.name}</h3><span>₹{product.price}</span></div></article>)}
+            {products.map((product) => { const isOnSale = hasSale(product); const salePrice = getSalePrice(product.price, product.discount_percentage); return <article className="featured-card" key={product.id} onClick={() => router.push("/products")}><div className="featured-image">{isOnSale && <span className="sale-pill">{product.sale_name}</span>}<img src={product.image_url} alt={product.name} /></div><div className="featured-info"><h3>{product.name}</h3><span className="featured-price">{isOnSale && <del>₹{formatPrice(product.price)}</del>}₹{formatPrice(isOnSale ? salePrice : product.price)}</span></div></article>; })}
             {!products.length && [1,2,3].map((item) => <div className="featured-card" key={item}><div className="featured-image" /><div className="featured-info"><h3>Made with care</h3><span>—</span></div></div>)}
           </div>
         </div>

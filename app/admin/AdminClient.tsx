@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 
 <style jsx global>{`
   input:-webkit-autofill,
@@ -19,6 +20,8 @@ type Product = {
   image_url: string | null;
   tags: string[];
   is_active: boolean;
+  sale_name: string | null;
+  discount_percentage: number | null;
 };
 
 const inputClass =
@@ -32,9 +35,13 @@ const getFilePathFromUrl = (url: string) => {
 };
 
 export default function AdminClient() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saleForm, setSaleForm] = useState({ name: "", discount: "" });
+  const [selectedSaleProducts, setSelectedSaleProducts] = useState<string[]>([]);
+  const [savingSale, setSavingSale] = useState(false);
+  const [saleMessage, setSaleMessage] = useState<string | null>(null);
 
   // login form
   const [email, setEmail] = useState("");
@@ -208,13 +215,63 @@ export default function AdminClient() {
   const updateProduct = async (
     id: string,
     field: keyof Product,
-    value: any
+    value: Product[keyof Product]
   ) => {
     await supabase
       .from("products")
       .update({ [field]: value })
       .eq("id", id);
   };
+
+  const applySale = async () => {
+    const name = saleForm.name.trim();
+    const discount = Number(saleForm.discount);
+    if (!name || discount <= 0 || discount >= 100 || selectedSaleProducts.length === 0) {
+      setSaleMessage("Enter a sale name, a discount from 1 to 99, and choose at least one product.");
+      return;
+    }
+
+    setSavingSale(true);
+    setSaleMessage(null);
+    const { error } = await supabase
+      .from("products")
+      .update({ sale_name: name, discount_percentage: discount })
+      .in("id", selectedSaleProducts);
+
+    if (error) {
+      setSaleMessage(error.message);
+    } else {
+      setProducts((current) => current.map((product) => selectedSaleProducts.includes(product.id)
+        ? { ...product, sale_name: name, discount_percentage: discount }
+        : product));
+      setSaleMessage(`Sale applied to ${selectedSaleProducts.length} product${selectedSaleProducts.length === 1 ? "" : "s"}.`);
+    }
+    setSavingSale(false);
+  };
+
+  const clearSale = async () => {
+    if (selectedSaleProducts.length === 0) {
+      setSaleMessage("Choose at least one product to remove from sale.");
+      return;
+    }
+    setSavingSale(true);
+    setSaleMessage(null);
+    const { error } = await supabase
+      .from("products")
+      .update({ sale_name: null, discount_percentage: null })
+      .in("id", selectedSaleProducts);
+    if (error) setSaleMessage(error.message);
+    else {
+      setProducts((current) => current.map((product) => selectedSaleProducts.includes(product.id)
+        ? { ...product, sale_name: null, discount_percentage: null }
+        : product));
+      setSaleMessage("Sale removed from the selected products.");
+    }
+    setSavingSale(false);
+  };
+
+  const allProductsSelected = products.length > 0 && selectedSaleProducts.length === products.length;
+  const toggleAllSaleProducts = () => setSelectedSaleProducts(allProductsSelected ? [] : products.map((product) => product.id));
 
   /* ---------------- UI ---------------- */
 
@@ -264,7 +321,7 @@ export default function AdminClient() {
       <div className="max-w-7xl mx-auto space-y-10">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Admin – Products</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Admin – Products & Sales</h1>
           <button
             onClick={logout}
             className="
@@ -335,6 +392,40 @@ export default function AdminClient() {
             Add Product
           </button>
         </div>
+
+        {/* Sales */}
+        <section className="bg-white border border-gray-300 rounded-xl p-6 shadow-sm space-y-5">
+          <div>
+            <h2 className="font-semibold text-gray-900">Create a sale</h2>
+            <p className="mt-1 text-sm text-gray-500">Choose products, then apply one sale name and discount to all of them.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="text-sm font-medium text-gray-700">Sale name
+              <input value={saleForm.name} onChange={(e) => setSaleForm({ ...saleForm, name: e.target.value })} placeholder="Summer Sale" className={inputClass + " mt-1"} />
+            </label>
+            <label className="text-sm font-medium text-gray-700">Discount percentage
+              <input type="number" min="1" max="99" value={saleForm.discount} onChange={(e) => setSaleForm({ ...saleForm, discount: e.target.value })} placeholder="20" className={inputClass + " mt-1"} />
+            </label>
+          </div>
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <label className="flex items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200 font-semibold text-gray-800 cursor-pointer">
+              <input type="checkbox" checked={allProductsSelected} onChange={toggleAllSaleProducts} className="w-5 h-5 accent-rose-600" />
+              Select all products <span className="ml-auto text-xs font-normal text-gray-500">{selectedSaleProducts.length} selected</span>
+            </label>
+            <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+              {products.map((product) => <label key={product.id} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-rose-50">
+                <input type="checkbox" checked={selectedSaleProducts.includes(product.id)} onChange={() => setSelectedSaleProducts((current) => current.includes(product.id) ? current.filter((id) => id !== product.id) : [...current, product.id])} className="w-5 h-5 accent-rose-600" />
+                <span className="text-sm font-medium text-gray-900">{product.name}</span>
+                {product.sale_name && <span className="ml-auto rounded-full bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700">{product.sale_name} · {product.discount_percentage}%</span>}
+              </label>)}
+            </div>
+          </div>
+          {saleMessage && <p className={`text-sm ${saleMessage.includes("applied") || saleMessage.includes("removed") ? "text-green-700" : "text-red-600"}`}>{saleMessage}</p>}
+          <div className="flex flex-wrap gap-3">
+            <button disabled={savingSale} onClick={applySale} className="bg-rose-600 text-white px-5 py-2 rounded-lg hover:bg-rose-700 disabled:opacity-50">{savingSale ? "Saving…" : "Apply sale"}</button>
+            <button disabled={savingSale} onClick={clearSale} className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50">Remove sale from selected</button>
+          </div>
+        </section>
 
         {/* Products List */}
         <div className="space-y-4">
