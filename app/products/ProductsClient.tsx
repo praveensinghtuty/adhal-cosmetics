@@ -6,10 +6,10 @@ import { supabase } from "@/lib/supabaseClient";
 import ProductCard from "@/components/ProductCard";
 import OrderModal from "@/components/OrderModal";
 import ProductSearch from "@/components/ProductSearch";
+import { CART_STORAGE_KEY } from "@/lib/cart";
 import { getSalePrice, hasSale, SaleFields } from "@/lib/sales";
 
 type Product = { id: string; name: string; description: string | null; price: number; image_url: string | null; tags: string[]; } & SaleFields;
-const CART_STORAGE_KEY = "homemade_cosmetics_cart";
 const SHOP_CATEGORIES = [
   { name: "Oils", image: "/images/categories/oils.svg", keywords: ["oil", "serum"] },
   { name: "Soaps", image: "/images/categories/soaps.svg", keywords: ["soap", "bar", "cleanser", "wash"] },
