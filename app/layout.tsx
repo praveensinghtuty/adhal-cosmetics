@@ -2,7 +2,10 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import type { Metadata } from "next";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Adhal Cosmetics",
     template: "%s | Adhal Cosmetics",

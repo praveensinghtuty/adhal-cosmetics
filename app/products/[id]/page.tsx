@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import ProductDetailsClient from "./ProductDetailsClient";
 import { formatPrice, getSalePrice, hasSale, SaleFields } from "@/lib/sales";
 import { supabase } from "@/lib/supabaseClient";
@@ -11,6 +11,8 @@ type ProductMetadata = {
   price: number;
   image_url: string | null;
 } & SaleFields;
+
+export const dynamic = "force-dynamic";
 
 const getSiteUrl = () => {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
@@ -49,6 +51,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const image = getAbsoluteUrl(product.image_url, siteUrl);
 
   return {
+    metadataBase: new URL(siteUrl),
     title,
     description,
     alternates: { canonical: productUrl },
@@ -58,7 +61,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       url: productUrl,
       siteName: "Adhal Cosmetics",
       type: "website",
-      images: image ? [{ url: image, width: 1200, height: 630, alt: product.name }] : undefined,
+      images: image ? [{ url: image, secureUrl: image, width: 1200, height: 630, alt: product.name }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
@@ -73,3 +76,4 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
   const { id } = await params;
   return <ProductDetailsClient productId={id} />;
 }
+
