@@ -9,7 +9,8 @@ import ProductSearch from "@/components/ProductSearch";
 import { CART_STORAGE_KEY } from "@/lib/cart";
 import { getSalePrice, hasSale, SaleFields } from "@/lib/sales";
 
-type Product = { id: string; name: string; description: string | null; price: number; image_url: string | null; tags: string[]; } & SaleFields;
+type Product = { id: string; name: string; description: string | null; price: number; image_url: string | null; tags: string[]; average_rating?: number; review_count?: number; } & SaleFields;
+type ReviewRating = { product_id: string | null; rating: number };
 const SHOP_CATEGORIES = [
   { name: "Oils", image: "/images/categories/oils.svg", keywords: ["oil", "serum"] },
   { name: "Soaps", image: "/images/categories/soaps.svg", keywords: ["soap", "bar", "cleanser", "wash"] },
@@ -33,8 +34,20 @@ export default function ProductsClient({ initialSearch = "" }: { initialSearch?:
   const [searchQuery, setSearchQuery] = useState(initialSearch.trim());
 
   useEffect(() => {
-    supabase.from("products").select("id,name,description,price,image_url,tags,sale_name,discount_percentage").eq("is_active", true).then(({ data }) => {
-      const currentProducts = data || [];
+    Promise.all([
+      supabase.from("products").select("id,name,description,price,image_url,tags,sale_name,discount_percentage").eq("is_active", true),
+      supabase.from("reviews").select("product_id,rating").not("product_id", "is", null),
+    ]).then(([productsResult, reviewsResult]) => {
+      const reviewGroups = ((reviewsResult.data || []) as ReviewRating[]).reduce<Record<string, { total: number; count: number }>>((groups, review) => {
+        if (!review.product_id) return groups;
+        const current = groups[review.product_id] || { total: 0, count: 0 };
+        groups[review.product_id] = { total: current.total + Number(review.rating || 0), count: current.count + 1 };
+        return groups;
+      }, {});
+      const currentProducts = (productsResult.data || []).map((product) => {
+        const reviews = reviewGroups[product.id];
+        return reviews ? { ...product, average_rating: reviews.total / reviews.count, review_count: reviews.count } : product;
+      });
       setProducts(currentProducts);
       setCart((current) => {
         const next = { ...current };

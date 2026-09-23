@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { formatPrice, getSalePrice, hasSale, SaleFields } from "@/lib/sales";
 
 type Product = {
@@ -8,6 +8,8 @@ type Product = {
   price: number;
   image_url: string | null;
   tags: string[];
+  average_rating?: number;
+  review_count?: number;
 } & SaleFields;
 
 export default function ProductCard({
@@ -22,6 +24,8 @@ export default function ProductCard({
   const isOnSale = hasSale(product);
   const currentPrice = isOnSale ? getSalePrice(product.price, product.discount_percentage) : product.price;
   const cartProduct = { ...product, price: currentPrice };
+  const reviewCount = product.review_count || 0;
+  const averageRating = product.average_rating || 0;
 
   return (
     <article className="product-card">
@@ -32,6 +36,12 @@ export default function ProductCard({
         </div>
         <div>
           <h2>{product.name}</h2>
+          {reviewCount > 0 && (
+            <div className="product-rating" aria-label={`${averageRating.toFixed(1)} out of 5 from ${reviewCount} reviews`}>
+              <span>{"★".repeat(Math.max(1, Math.round(averageRating)))}</span>
+              <small>{averageRating.toFixed(1)} · {reviewCount} {reviewCount === 1 ? "review" : "reviews"}</small>
+            </div>
+          )}
           {product.description && <p className="product-description">{product.description}</p>}
         </div>
       </Link>

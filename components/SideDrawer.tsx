@@ -1,8 +1,9 @@
 "use client";
 
 import { BarChart3, Home, LayoutDashboard, MapPin, Package, Percent, ShoppingBag, Star, Store, User, X } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 
 const sections = [
   {
@@ -36,6 +37,7 @@ const sections = [
 export default function SideDrawer({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -43,6 +45,31 @@ export default function SideDrawer({ onClose }: { onClose: () => void }) {
     window.addEventListener("keydown", onKey);
     return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", onKey); };
   }, [onClose]);
+
+  useEffect(() => {
+    let active = true;
+
+    const checkAdmin = async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) {
+        if (active) setIsAdmin(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc("is_admin");
+      if (active) setIsAdmin(!error && Boolean(data));
+    };
+
+    checkAdmin();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAdmin();
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const isActive = (path: string, exact?: boolean) => exact ? pathname === path : pathname === path || pathname.startsWith(`${path}/`);
   const navigate = (path: string) => {
@@ -59,7 +86,7 @@ export default function SideDrawer({ onClose }: { onClose: () => void }) {
         </div>
 
         <nav className="drawer-menu">
-          {sections.map((section) => (
+          {sections.filter((section) => section.title !== "Admin" || isAdmin).map((section) => (
             <section className="drawer-section" key={section.title}>
               <p>{section.title}</p>
               <div>

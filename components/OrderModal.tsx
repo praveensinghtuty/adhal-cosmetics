@@ -176,7 +176,7 @@ export default function OrderModal({
     });
 
     onClearCart();
-    router.push("/account/orders");
+    router.push("/account/orders?placed=1");
   };
 
   return (

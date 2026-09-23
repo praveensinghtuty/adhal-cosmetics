@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { ArrowLeft, Check, Heart, Leaf, PackageCheck, ShieldCheck, ShoppingBag, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Copy, Heart, Leaf, Mail, MessageCircle, MoreHorizontal, PackageCheck, Share2, ShieldCheck, ShoppingBag, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import OrderModal from "@/components/OrderModal";
 import ProductCard from "@/components/ProductCard";
@@ -33,6 +33,13 @@ type ProductImage = {
   is_primary: boolean;
 };
 
+type ProductReview = {
+  id: string;
+  name: string;
+  rating: number;
+  comment: string;
+};
+
 const defaultBenefits = ["Handmade in small batches", "Gentle for everyday routines", "Packed fresh with care"];
 const defaultHowToUse = ["Apply on damp skin or hair as suitable for the product.", "Use gentle circular motions.", "Rinse or leave on as directed by your routine."];
 const defaultBestFor = ["Daily self-care", "Simple botanical routines", "Customers who prefer handmade care"];
@@ -40,10 +47,13 @@ const defaultBestFor = ["Daily self-care", "Simple botanical routines", "Custome
 export default function ProductDetailsClient({ productId }: { productId: string }) {
   const [product, setProduct] = useState<Product | null>(null);
   const [gallery, setGallery] = useState<ProductImage[]>([]);
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [cart, setCart] = useState<Record<string, Product & { quantity: number }>>(() => {
     if (typeof window === "undefined") return {};
     const stored = localStorage.getItem(CART_STORAGE_KEY);
@@ -66,13 +76,19 @@ export default function ProductDetailsClient({ productId }: { productId: string 
         .eq("product_id", productId)
         .order("is_primary", { ascending: false })
         .order("sort_order", { ascending: true }),
-    ]).then(async ([productResult, galleryResult]) => {
+      supabase
+        .from("reviews")
+        .select("id,name,rating,comment")
+        .eq("product_id", productId)
+        .order("created_at", { ascending: false }),
+    ]).then(async ([productResult, galleryResult, reviewsResult]) => {
       if (!active) return;
       const data = productResult.data as Product | null;
       setProduct(data);
 
       if (!data) {
         setGallery([]);
+        setReviews([]);
         setSelectedImage(null);
         setRelatedProducts([]);
         setLoading(false);
@@ -89,6 +105,7 @@ export default function ProductDetailsClient({ productId }: { productId: string 
       });
       setGallery(nextGallery);
       setSelectedImage(nextGallery[0]?.image_url || data.image_url);
+      setReviews((reviewsResult.data as ProductReview[]) || []);
 
       const firstTag = data.tags?.[0];
       const relatedQuery = supabase
@@ -121,6 +138,29 @@ export default function ProductDetailsClient({ productId }: { productId: string 
     return next;
   });
 
+  const getProductUrl = () => {
+    if (typeof window === "undefined") return `/products/${productId}`;
+    return `${window.location.origin}/products/${productId}`;
+  };
+
+  const copyProductLink = async () => {
+    const url = getProductUrl();
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = url;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+    }
+    setShareCopied(true);
+    window.setTimeout(() => setShareCopied(false), 1800);
+  };
+
   if (loading) {
     return <main className="product-detail-page"><div className="site-shell"><div className="empty-state">Loading product details...</div></div></main>;
   }
@@ -137,12 +177,38 @@ export default function ProductDetailsClient({ productId }: { productId: string 
   const howToUse = product.how_to_use?.length ? product.how_to_use : defaultHowToUse;
   const bestFor = product.best_for?.length ? product.best_for : defaultBestFor;
   const ingredients = product.ingredients?.length ? product.ingredients : product.tags || [];
+  const reviewCount = reviews.length;
+  const averageRating = reviewCount ? reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviewCount : 0;
+  const roundedRating = Math.round(averageRating);
+  const productUrl = getProductUrl();
+  const shareText = `Check out ${product.name} from Adhal Cosmetics`;
+  const encodedShareText = encodeURIComponent(`${shareText}\n${productUrl}`);
+
+  const shareProduct = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: product.name, text: shareText, url: productUrl });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+    setShowShareOptions(true);
+  };
 
   return <main className="product-detail-page">
     <div className="site-shell">
       <Link className="back-link" href="/products"><ArrowLeft size={16} /> Back to products</Link>
       <section className="product-detail-layout">
         <div className="product-gallery">
+          <div className="product-gallery-toolbar">
+            {reviewCount > 0 ? <a className="gallery-review-pill" href="#product-reviews" aria-label={`${averageRating.toFixed(1)} out of 5 from ${reviewCount} reviews`}>
+              <span>{"★".repeat(roundedRating)}{"☆".repeat(5 - roundedRating)}</span>
+              <strong>{averageRating.toFixed(1)}</strong>
+              <small>{reviewCount} {reviewCount === 1 ? "review" : "reviews"}</small>
+            </a> : <span className="gallery-review-pill muted">No reviews yet</span>}
+            <button className="product-image-share" onClick={() => setShowShareOptions(true)} aria-label="Share product"><Share2 size={18} /></button>
+          </div>
           <div className="product-detail-image">
             {isOnSale && <span className="sale-pill">{product.sale_name}</span>}
             {selectedImage ? <img src={selectedImage} alt={product.name} /> : <div className="empty-state">No image available</div>}
@@ -199,12 +265,37 @@ export default function ProductDetailsClient({ productId }: { productId: string 
         <div><Heart size={17} /><strong>Tamil Nadu</strong><span>Delivery region</span></div>
       </section>
 
+      <section id="product-reviews" className="product-reviews-section">
+        <div className="product-reviews-heading"><div><p className="eyebrow">Customer reviews</p><h2 className="section-title">What customers say.</h2></div>{reviewCount > 0 && <span className="review-total">{averageRating.toFixed(1)} ★ · {reviewCount} {reviewCount === 1 ? "review" : "reviews"}</span>}</div>
+        {reviewCount > 0 ? <div className="product-review-list">{reviews.slice(0, 3).map((review) => <article key={review.id} className="product-review-card"><div><strong>{review.name}</strong><span>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span></div><p>“{review.comment}”</p></article>)}</div> : <div className="empty-state">No reviews yet for this product.</div>}
+      </section>
       {relatedProducts.length > 0 && <section className="related-products">
         <div className="section-heading-row"><div><p className="eyebrow">You may also like</p><h2 className="section-title">More from the collection.</h2></div></div>
         <div className="catalog-grid">{relatedProducts.map((item) => <ProductCard key={item.id} product={item} quantity={cart[item.id]?.quantity || 0} onQuantityChange={updateQuantity} />)}</div>
       </section>}
     </div>
+    {showShareOptions && <div className="overlay product-share-overlay" onClick={() => setShowShareOptions(false)}>
+      <section className="product-share-sheet" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="Share this product">
+        <button className="share-sheet-close" onClick={() => setShowShareOptions(false)} aria-label="Close share"><X size={18} /></button>
+        <h2>Share this product with friends</h2>
+        <div className="share-product-preview">
+          {selectedImage && <img src={selectedImage} alt={product.name} />}
+          <div>
+            {reviewCount > 0 && <div className="share-preview-rating"><span>{"★".repeat(roundedRating)}{"☆".repeat(5 - roundedRating)}</span><small>{reviewCount}</small></div>}
+            <p>{product.name}</p>
+          </div>
+        </div>
+        <div className="share-actions">
+          <a href={`https://wa.me/?text=${encodedShareText}`} target="_blank" rel="noreferrer"><span className="share-action-icon whatsapp"><MessageCircle size={22} /></span><small>WhatsApp</small></a>
+          <button onClick={copyProductLink}><span className="share-action-icon"><Copy size={22} /></span><small>{shareCopied ? "Copied" : "Copy"}</small></button>
+          <a href={`mailto:?subject=${encodeURIComponent(product.name)}&body=${encodedShareText}`}><span className="share-action-icon"><Mail size={22} /></span><small>Email</small></a>
+          <button onClick={shareProduct}><span className="share-action-icon"><MoreHorizontal size={22} /></span><small>More</small></button>
+        </div>
+      </section>
+    </div>}
     {quantity > 0 && <div className="cart-bar"><div className="cart-bar-copy"><strong>{quantity} {quantity === 1 ? "item" : "items"} in your bag</strong><span>₹{formatPrice(total)} total</span></div><button onClick={() => setShowModal(true)}>Review order</button></div>}
     {showModal && quantity > 0 && <OrderModal cart={cart} totalAmount={total} onClose={() => setShowModal(false)} onClearCart={() => { setCart({}); setShowModal(false); }} onRemoveItem={(id) => setCart((previous) => { const next = { ...previous }; delete next[id]; return next; })} />}
   </main>;
 }
+
+

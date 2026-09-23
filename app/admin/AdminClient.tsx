@@ -55,6 +55,8 @@ type StoreOrder = {
   pincode: string;
   status: string;
   payment_status: string;
+  subtotal: number;
+  courier_amount: number | null;
   total_amount: number;
   created_at: string;
   order_items: { id: string; product_name: string; quantity: number; line_total: number }[];
@@ -105,6 +107,7 @@ const listText = (value?: string[] | null) => (value || []).join("\n");
 
 export default function AdminClient({ section = "overview" }: { section?: AdminSection }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
@@ -142,7 +145,7 @@ export default function AdminClient({ section = "overview" }: { section?: AdminS
     const [{ data: orderData }, { data: eventData }] = await Promise.all([
       supabase
         .from("orders")
-        .select("id,order_number,customer_name,customer_phone,address_line1,address_line2,city,state,pincode,status,payment_status,total_amount,created_at,order_items(id,product_name,quantity,line_total)")
+        .select("id,order_number,customer_name,customer_phone,address_line1,address_line2,city,state,pincode,status,payment_status,subtotal,courier_amount,total_amount,created_at,order_items(id,product_name,quantity,line_total)")
         .order("created_at", { ascending: false })
         .limit(25),
       supabase
@@ -173,22 +176,41 @@ export default function AdminClient({ section = "overview" }: { section?: AdminS
   }
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+    let active = true;
+
+    const setSessionUser = async (nextUser: User | null) => {
+      setUser(nextUser);
+      if (!nextUser) {
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc("is_admin");
+      if (!active) return;
+      setIsAdmin(!error && Boolean(data));
       setLoading(false);
+    };
+
+    supabase.auth.getUser().then(({ data }) => {
+      setSessionUser(data.user);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      setLoading(true);
+      setSessionUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isAdmin) return;
 
     supabase.from("products").select("*,product_images(id,image_url,alt_text,sort_order,is_primary)").order("created_at", { ascending: false }).then(({ data }) => {
       setProducts(data || []);
@@ -198,7 +220,7 @@ export default function AdminClient({ section = "overview" }: { section?: AdminS
       setOrders(orderData);
       setAnalyticsEvents(eventData);
     });
-  }, [user]);
+  }, [isAdmin, user]);
 
   useEffect(() => { tempImagePathRef.current = tempImagePath; }, [tempImagePath]);
   useEffect(() => { tempGalleryImagesRef.current = tempGalleryImages; }, [tempGalleryImages]);
@@ -374,6 +396,12 @@ export default function AdminClient({ section = "overview" }: { section?: AdminS
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     setOrderMessage(null);
+    const order = orders.find((item) => item.id === orderId);
+    if (status !== "pending" && status !== "cancelled" && (order?.courier_amount === null || order?.courier_amount === undefined)) {
+      setOrderMessage("Add courier amount before confirming this order.");
+      return;
+    }
+
     const { data, error: updateError } = await supabase
       .from("orders")
       .update({ status })
@@ -389,6 +417,32 @@ export default function AdminClient({ section = "overview" }: { section?: AdminS
     setOrders((current) => current.map((order) => order.id === orderId ? { ...order, status: data.status } : order));
     await fetchOperations();
     setOrderMessage(`Order status changed to ${status}.`);
+  };
+
+  const updateCourierAmount = async (order: StoreOrder, value: string) => {
+    setOrderMessage(null);
+    const courierAmount = value === "" ? null : Number(value);
+    if (courierAmount !== null && (Number.isNaN(courierAmount) || courierAmount < 0)) {
+      setOrderMessage("Courier amount must be zero or more.");
+      return;
+    }
+
+    const nextTotal = Number(order.subtotal || 0) + Number(courierAmount || 0);
+    const { data, error: updateError } = await supabase
+      .from("orders")
+      .update({ courier_amount: courierAmount, total_amount: nextTotal })
+      .eq("id", order.id)
+      .select("id,courier_amount,total_amount")
+      .single();
+
+    if (updateError || !data) {
+      setOrderMessage(updateError?.message || "Courier amount was not updated.");
+      return;
+    }
+
+    setOrders((current) => current.map((item) => item.id === order.id ? { ...item, courier_amount: data.courier_amount, total_amount: data.total_amount } : item));
+    await fetchOperations();
+    setOrderMessage("Courier amount updated.");
   };
 
   const updatePaymentStatus = async (orderId: string, paymentStatus: string) => {
@@ -473,6 +527,18 @@ export default function AdminClient({ section = "overview" }: { section?: AdminS
     );
   }
 
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center px-4">
+        <div className="w-full max-w-sm bg-white border border-gray-300 rounded-xl p-6 shadow-sm mx-auto space-y-4 text-center">
+          <h1 className="text-xl font-semibold text-gray-900">Admin access only</h1>
+          <p className="text-sm leading-6 text-gray-500">This account does not have permission to view admin tools.</p>
+          <button onClick={logout} className="w-full bg-gray-900 text-white py-2 rounded-lg hover:bg-black">Sign out</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#faf9f6] px-3 pt-24 pb-10 sm:px-4 sm:pt-28">
       <div className="max-w-7xl mx-auto">
@@ -497,7 +563,7 @@ export default function AdminClient({ section = "overview" }: { section?: AdminS
           {section === "add-product" && <AddProductSection form={form} setForm={setForm} tempImageUrl={tempImageUrl} tempGalleryImages={tempGalleryImages} uploadTempImage={uploadTempImage} uploadTempGalleryImages={uploadTempGalleryImages} removeTempGalleryImage={removeTempGalleryImage} addProduct={addProduct} />}
           {section === "products" && <ProductsSection products={products} updateProduct={updateProduct} replaceProductImage={replaceProductImage} uploadProductGalleryImage={uploadProductGalleryImage} removeProductGalleryImage={removeProductGalleryImage} />}
           {section === "sales" && <SalesSection products={products} saleForm={saleForm} setSaleForm={setSaleForm} selectedSaleProducts={selectedSaleProducts} setSelectedSaleProducts={setSelectedSaleProducts} allProductsSelected={allProductsSelected} toggleAllSaleProducts={toggleAllSaleProducts} savingSale={savingSale} saleMessage={saleMessage} applySale={applySale} clearSale={clearSale} />}
-          {section === "orders" && <OrdersSection orders={orders} orderMessage={orderMessage} updateOrderStatus={updateOrderStatus} updatePaymentStatus={updatePaymentStatus} fetchOperations={fetchOperations} />}
+          {section === "orders" && <OrdersSection orders={orders} orderMessage={orderMessage} updateOrderStatus={updateOrderStatus} updatePaymentStatus={updatePaymentStatus} updateCourierAmount={updateCourierAmount} fetchOperations={fetchOperations} />}
           {section === "analytics" && <AnalyticsSection orders={orders} analyticsEvents={analyticsEvents} pendingOrders={pendingOrders} manualRevenue={manualRevenue} createdOrderEvents={createdOrderEvents} activeProducts={activeProducts} />}
         </div>
       </div>
@@ -677,7 +743,7 @@ function SalesSection({ products, saleForm, setSaleForm, selectedSaleProducts, s
   );
 }
 
-function OrdersSection({ orders, orderMessage, updateOrderStatus, updatePaymentStatus, fetchOperations }: { orders: StoreOrder[]; orderMessage: string | null; updateOrderStatus: (orderId: string, status: string) => Promise<void>; updatePaymentStatus: (orderId: string, paymentStatus: string) => Promise<void>; fetchOperations: () => Promise<void> }) {
+function OrdersSection({ orders, orderMessage, updateOrderStatus, updatePaymentStatus, updateCourierAmount, fetchOperations }: { orders: StoreOrder[]; orderMessage: string | null; updateOrderStatus: (orderId: string, status: string) => Promise<void>; updatePaymentStatus: (orderId: string, paymentStatus: string) => Promise<void>; updateCourierAmount: (order: StoreOrder, value: string) => Promise<void>; fetchOperations: () => Promise<void> }) {
   const labelStatus = (status: string) => status.charAt(0).toUpperCase() + status.slice(1);
   const statusMessages: Record<string, string> = {
     pending: "We received your order and will confirm it shortly.",
@@ -690,8 +756,9 @@ function OrdersSection({ orders, orderMessage, updateOrderStatus, updatePaymentS
 
   const getWhatsAppUrl = (order: StoreOrder) => {
     const address = `${order.address_line1}${order.address_line2 ? `, ${order.address_line2}` : ""}, ${order.city}, ${order.state} - ${order.pincode}`;
+    const courierLine = order.courier_amount === null ? "Courier charges: To be confirmed" : `Courier charges: ₹${formatPrice(order.courier_amount)}`;
     const message = encodeURIComponent(
-      `Hello ${order.customer_name},\n\nUpdate for order ${order.order_number}:\n${statusMessages[order.status] || "Your order status has been updated."}\n\nItems:\n${order.order_items.map((item) => `${item.product_name} × ${item.quantity} = ₹${formatPrice(item.line_total)}`).join("\n")}\n\nTotal: ₹${formatPrice(order.total_amount)}\nStatus: ${order.status}\nPayment: ${order.payment_status}\n\nDelivery address:\n${address}`
+      `Hello ${order.customer_name},\n\nUpdate for order ${order.order_number}:\n${statusMessages[order.status] || "Your order status has been updated."}\n\nItems:\n${order.order_items.map((item) => `${item.product_name} × ${item.quantity} = ₹${formatPrice(item.line_total)}`).join("\n")}\n\nProducts subtotal: ₹${formatPrice(order.subtotal)}\n${courierLine}\nFinal total: ₹${formatPrice(order.total_amount)}\nStatus: ${order.status}\nPayment: ${order.payment_status}\n\nDelivery address:\n${address}`
     );
     const phone = order.customer_phone.startsWith("91") ? order.customer_phone : `91${order.customer_phone}`;
     return `https://wa.me/${phone}?text=${message}`;
@@ -703,7 +770,7 @@ function OrdersSection({ orders, orderMessage, updateOrderStatus, updatePaymentS
         <div><h2 className="font-semibold text-gray-900">Order queue</h2><p className="mt-1 text-sm text-gray-500">Review customer orders and move them through fulfilment.</p></div>
         <button onClick={fetchOperations} className="border border-gray-300 text-gray-700 px-4 py-2 rounded-full text-sm font-semibold hover:bg-gray-50">Refresh</button>
       </div>
-      {orderMessage && <p className={`mt-4 rounded-xl px-4 py-3 text-sm ${orderMessage.includes("changed") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>{orderMessage}</p>}
+      {orderMessage && <p className={`mt-4 rounded-xl px-4 py-3 text-sm ${orderMessage.includes("changed") || orderMessage.includes("updated") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>{orderMessage}</p>}
       <div className="mt-5 space-y-3">
         {orders.map((order) => <article key={order.id} className="border border-gray-200 rounded-xl p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -720,6 +787,10 @@ function OrdersSection({ orders, orderMessage, updateOrderStatus, updatePaymentS
                 <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">Fulfilment</span>
                 <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">{labelStatus(order.status)}</span>
               </div>
+              <label className="grid gap-1 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                Courier amount
+                <input type="number" min="0" step="1" defaultValue={order.courier_amount ?? ""} onBlur={(event) => updateCourierAmount(order, event.target.value)} placeholder="Required to confirm" className="min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm font-normal normal-case tracking-normal text-gray-800 bg-white" />
+              </label>
               <label className="grid gap-1 text-[10px] font-bold uppercase tracking-wide text-gray-500">
                 Change status
                 <select value={order.status} onChange={(event) => updateOrderStatus(order.id, event.target.value)} className="min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm font-normal normal-case tracking-normal text-gray-800 bg-white">
@@ -739,6 +810,11 @@ function OrdersSection({ orders, orderMessage, updateOrderStatus, updatePaymentS
             </div>
           </div>
           <div className="mt-3 divide-y divide-gray-100">{order.order_items.map((item) => <p key={item.id} className="py-2 text-sm text-gray-700 flex justify-between gap-3"><span>{item.product_name} × {item.quantity}</span><strong>₹{formatPrice(item.line_total)}</strong></p>)}</div>
+          <div className="mt-3 rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
+            <p className="flex justify-between gap-3"><span>Products subtotal</span><strong>₹{formatPrice(order.subtotal)}</strong></p>
+            <p className="mt-1 flex justify-between gap-3"><span>Courier charges</span><strong>{order.courier_amount === null ? "Required before confirm" : `₹${formatPrice(order.courier_amount)}`}</strong></p>
+            <p className="mt-2 flex justify-between gap-3 border-t border-gray-200 pt-2 text-gray-900"><span className="font-semibold">Final total</span><strong>₹{formatPrice(order.total_amount)}</strong></p>
+          </div>
           <div className="mt-3 grid gap-3 border-t border-gray-100 pt-3 text-sm sm:flex sm:items-center sm:justify-between">
             <span>{new Date(order.created_at).toLocaleString("en-IN")}</span>
             <div className="flex items-center justify-between gap-3 sm:justify-end">
